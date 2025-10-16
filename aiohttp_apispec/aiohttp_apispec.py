@@ -13,7 +13,7 @@ from apispec.ext.marshmallow import MarshmallowPlugin, common
 from jinja2 import Template
 from webargs.aiohttpparser import parser
 
-from .utils import get_path, get_path_keys
+from .utils import get_path, get_path_keys, issubclass_py37fix
 
 _AiohttpView = Callable[[web.Request], Awaitable[web.StreamResponse]]
 
@@ -168,7 +168,7 @@ class AiohttpApiSpec:
 
     def _register(self, app: web.Application):
         for route in app.router.routes():
-            if issubclass(route.handler, web.View) and route.method == METH_ANY:
+            if issubclass_py37fix(route.handler, web.View):
                 for attr in dir(route.handler):
                     if attr.upper() in METH_ALL:
                         view = getattr(route.handler, attr)
@@ -176,7 +176,7 @@ class AiohttpApiSpec:
                         self._register_route(route, method, view)
             else:
                 method = route.method.lower()
-                view = getattr(route.handler, method)
+                view = route.handler
                 self._register_route(route, method, view)
         app["swagger_dict"] = self.swagger_dict()
 
