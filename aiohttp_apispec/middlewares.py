@@ -1,7 +1,5 @@
 from aiohttp import web
 
-from .utils import issubclass_py37fix
-
 
 @web.middleware
 async def validation_middleware(request: web.Request, handler) -> web.Response:
@@ -18,7 +16,7 @@ async def validation_middleware(request: web.Request, handler) -> web.Response:
     """
     orig_handler = request.match_info.handler
     if not hasattr(orig_handler, "__schemas__"):
-        if not issubclass_py37fix(orig_handler, web.View):
+        if not issubclass(orig_handler, web.View):
             return await handler(request)
         sub_handler = getattr(orig_handler, request.method.lower(), None)
         if sub_handler is None:
