@@ -61,6 +61,10 @@ class AiohttpApiSpec:
         openapi_version=None,
         **kwargs,
     ):
+        print("=====================")
+        print(openapi_version)
+        print("=====================")
+
         openapi_version = openapi_version or OpenApiVersion.V20
         try:
             openapi_version = OpenApiVersion(openapi_version)
@@ -210,6 +214,21 @@ class AiohttpApiSpec:
             if path_key not in existing
         )
 
+        data["requestBody"] = {"content": {}}
+        # update parameters with requestBody for openapi 3.0
+        for el in data["parameters"]:
+            data["requestBody"] = {
+                'required': el['required'],
+                'content': {
+                    'application/json': {
+                        'schema': el['schema'],
+                        # example: el['example'],
+                    }
+                }
+            }
+
+        del data["parameters"]
+
         if "responses" in data:
             responses = {}
             for code, actual_params in data["responses"].items():
@@ -278,7 +297,7 @@ def setup_aiohttp_apispec(
     in_place: bool = False,
     prefix: str = '',
     schema_name_resolver: Callable = resolver,
-    openapi_version: Union[str, OpenApiVersion] = OpenApiVersion.V20,
+    openapi_version: Union[str, OpenApiVersion] = OpenApiVersion.V303,
     **kwargs,
 ) -> AiohttpApiSpec:
     """
