@@ -61,10 +61,6 @@ class AiohttpApiSpec:
         openapi_version=None,
         **kwargs,
     ):
-        print("=====================")
-        print(openapi_version)
-        print("=====================")
-
         openapi_version = openapi_version or OpenApiVersion.V20
         try:
             openapi_version = OpenApiVersion(openapi_version)
