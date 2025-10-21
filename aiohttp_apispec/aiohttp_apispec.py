@@ -210,20 +210,28 @@ class AiohttpApiSpec:
             if path_key not in existing
         )
 
-        data["requestBody"] = {"content": {}}
-        # update parameters with requestBody for openapi 3.0
-        for el in data["parameters"]:
-            data["requestBody"] = {
-                'required': el['required'],
-                'content': {
-                    'application/json': {
-                        'schema': el['schema'],
-                        # example: el['example'],
+        if "requestBody" not in data:
+            data["requestBody"] = {"content": {}}
+        # update parameters with for openapi 3.0
+        for idx, el in enumerate(data["parameters"]):
+            if el['name'] == 'body':
+                data["requestBody"] = {
+                    'required': el['required'],
+                    'content': {
+                        'application/json': {
+                            'schema': el['schema'],
+                            # example: el['example'],
+                        }
                     }
                 }
-            }
+                del data["parameters"][idx]
+            else:
+                if 'schema' not in el:
+                    el['schema'] = {
+                        'type': el['type'],
+                    }
+                    del el['type']
 
-        del data["parameters"]
 
         if "responses" in data:
             responses = {}
