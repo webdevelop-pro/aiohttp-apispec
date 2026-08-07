@@ -34,9 +34,9 @@ def request_schema(
 
         class RequestSchema(Schema):
             id = fields.Int()
-            name = fields.Str(description='name')
+            name = fields.Str(metadata={'description': 'name'})
 
-        @request_schema(RequestSchema(strict=True))
+        @request_schema(RequestSchema)
         async def index(request):
             # aiohttp_apispec_middleware should be used for it
             data = request['data']

@@ -7,7 +7,7 @@ Quickstart
 ----------
 
 .. note::
-    Using strict=True need only for marshmallow < 3.0.0
+    Marshmallow 4 schemas do not accept the removed ``strict`` argument.
 
 .. code-block:: python
 
@@ -21,7 +21,7 @@ Quickstart
 
     class RequestSchema(Schema):
         id = fields.Int()
-        name = fields.Str(description='name')
+        name = fields.Str(metadata={'description': 'name'})
         bool_field = fields.Bool()
 
 
@@ -33,7 +33,7 @@ Quickstart
     @docs(tags=['mytag'],
           summary='Test method summary',
           description='Test method description')
-    @request_schema(RequestSchema(strict=True))
+    @request_schema(RequestSchema)
     @response_schema(ResponseSchema(), 200)
     async def index(request):
         return web.json_response({'msg': 'done',
@@ -46,7 +46,7 @@ Quickstart
             summary='View method summary',
             description='View method description',
         )
-        @request_schema(RequestSchema(strict=True))
+        @request_schema(RequestSchema)
         def delete(self):
             return web.json_response({
                 'msg': 'done',
@@ -83,7 +83,7 @@ Now you can access all validated data in route from ``request['data']`` like so:
     @docs(tags=['mytag'],
           summary='Test method summary',
           description='Test method description')
-    @request_schema(RequestSchema(strict=True))
+    @request_schema(RequestSchema)
     @response_schema(ResponseSchema(), 200)
     async def index(request):
         uid = request['data']['id']
@@ -106,7 +106,7 @@ with ``request_data_name`` argument of ``setup_aiohttp_apispec`` function:
 
     ...
 
-    @request_schema(RequestSchema(strict=True))
+    @request_schema(RequestSchema)
     async def index(request):
         uid = request['validated_data']['id']
         ...

@@ -64,14 +64,14 @@ from marshmallow import Schema, fields
 
 class RequestSchema(Schema):
     id = fields.Int()
-    name = fields.Str(description="name")
+    name = fields.Str(metadata={"description": "name"})
 
 @docs(
     tags=["mytag"],
     summary="Test method summary",
     description="Test method description",
 )
-@request_schema(RequestSchema(strict=True))
+@request_schema(RequestSchema)
 async def index(request):
     return web.json_response({"msg": "done", "data": {}})
 
@@ -100,7 +100,7 @@ class TheView(web.View):
         summary="View method summary",
         description="View method description",
     )
-    @request_schema(RequestSchema(strict=True))
+    @request_schema(RequestSchema)
     @response_schema(ResponseSchema(), 200)
     def delete(self):
         return web.json_response(
@@ -128,7 +128,7 @@ And it allows you not to use schemas for responses documentation:
         422: {"description": "Validation error"},
     },
 )
-@request_schema(RequestSchema(strict=True))
+@request_schema(RequestSchema)
 async def index(request):
     return web.json_response({"msg": "done", "data": {}})
 ```
@@ -150,7 +150,7 @@ Now you can access all validated data in route from ```request['data']``` like s
     summary="Test method summary",
     description="Test method description",
 )
-@request_schema(RequestSchema(strict=True))
+@request_schema(RequestSchema)
 @response_schema(ResponseSchema, 200)
 async def index(request):
     uid = request["data"]["id"]
@@ -173,7 +173,7 @@ setup_aiohttp_apispec(
 ...
 
 
-@request_schema(RequestSchema(strict=True))
+@request_schema(RequestSchema)
 async def index(request):
     uid = request["validated_data"]["id"]
     ...
@@ -183,7 +183,7 @@ Also you can do it for specific view using ```put_into```
 parameter (beginning from version 2.0):
 
 ```python
-@request_schema(RequestSchema(strict=True), put_into="validated_data")
+@request_schema(RequestSchema, put_into="validated_data")
 async def index(request):
     uid = request["validated_data"]["id"]
     ...

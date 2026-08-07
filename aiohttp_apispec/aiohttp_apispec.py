@@ -271,9 +271,8 @@ class AiohttpApiSpec:
             if add_to_refs:
                 self.spec.components.schemas[name]["example"] = example
             else:
-                endpoint_schema[0]['schema']['allOf'] = [
-                    endpoint_schema[0]['schema'].pop('$ref')
-                ]
+                reference = endpoint_schema[0]["schema"].pop("$ref")
+                endpoint_schema[0]["schema"]["allOf"] = [{"$ref": reference}]
                 endpoint_schema[0]['schema']["example"] = example
 
         if not example:
@@ -318,7 +317,7 @@ def setup_aiohttp_apispec(
 
         class RequestSchema(Schema):
             id = fields.Int()
-            name = fields.Str(description='name')
+            name = fields.Str(metadata={'description': 'name'})
             bool_field = fields.Bool()
 
 

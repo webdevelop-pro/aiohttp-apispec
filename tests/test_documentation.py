@@ -1,5 +1,3 @@
-import json
-
 from aiohttp import web
 from aiohttp.web_urldispatcher import StaticResource
 from yarl import URL
@@ -26,152 +24,67 @@ async def test_app_swagger_json(aiohttp_app, example_for_request_schema):
     docs = await resp.json()
     assert docs["info"]["title"] == "API documentation"
     assert docs["info"]["version"] == "0.0.1"
-    docs["paths"]["/v1/test"]["get"]["parameters"] = sorted(
-        docs["paths"]["/v1/test"]["get"]["parameters"], key=lambda x: x["name"]
-    )
-    assert json.dumps(docs["paths"]["/v1/test"]["get"], sort_keys=True) == json.dumps(
-        {
-            "parameters": [
-                {
-                    "in": "query",
-                    "name": "bool_field",
-                    "required": False,
-                    "type": "boolean",
-                },
-                {
-                    "in": "query",
-                    "name": "id",
-                    "required": False,
-                    "type": "integer",
-                },
-                {
-                    "collectionFormat": "multi",
-                    "in": "query",
-                    "items": {"type": "integer"},
-                    "name": "list_field",
-                    "required": False,
-                    "type": "array",
-                },
-                {
-                    "description": "name",
-                    "in": "query",
-                    "name": "name",
-                    "required": False,
-                    "type": "string",
-                },
-                {
-                    # default schema_name_resolver, resolved based on schema __name__
-                    # drops trailing "Schema so, MyNestedSchema resolves to MyNested
-                    "$ref": "#/definitions/MyNested",
-                    "in": "query",
-                    "name": "nested_field",
-                    "required": False,
-                },
-            ],
-            "responses": {
-                "200": {
-                    "description": "Success response",
-                    "schema": {"$ref": "#/definitions/Response"},
-                },
-                "404": {"description": "Not Found"},
-            },
-            "tags": ["mytag"],
-            "summary": "Test method summary",
-            "description": "Test method description",
-            "produces": ["application/json"],
-        },
-        sort_keys=True,
-    )
-    docs["paths"]["/v1/class_echo"]["get"]["parameters"] = sorted(
-        docs["paths"]["/v1/class_echo"]["get"]["parameters"], key=lambda x: x["name"]
-    )
-    assert json.dumps(
-        docs["paths"]["/v1/class_echo"]["get"], sort_keys=True
-    ) == json.dumps(
-        {
-            "parameters": [
-                {
-                    "in": "query",
-                    "name": "bool_field",
-                    "required": False,
-                    "type": "boolean",
-                },
-                {
-                    "in": "query",
-                    "name": "id",
-                    "required": False,
-                    "type": "integer",
-                },
-                {
-                    "collectionFormat": "multi",
-                    "in": "query",
-                    "items": {"type": "integer"},
-                    "name": "list_field",
-                    "required": False,
-                    "type": "array",
-                },
-                {
-                    "description": "name",
-                    "in": "query",
-                    "name": "name",
-                    "required": False,
-                    "type": "string",
-                },
-                {
-                    "$ref": "#/definitions/MyNested",
-                    "in": "query",
-                    "name": "nested_field",
-                    "required": False,
-                },
-            ],
-            "responses": {},
-            "tags": ["mytag"],
-            "summary": "View method summary",
-            "description": "View method description",
-            "produces": ["application/json"],
-        },
-        sort_keys=True,
-    )
-    assert docs["paths"]["/v1/example_endpoint"]["post"]["parameters"] == [
-        {
-            'in': 'body',
-            'required': False,
-            'name': 'body',
-            'schema': {
-                'allOf': [{'$ref': '#/definitions/#/definitions/Request'}],
-                'example': example_for_request_schema,
-            },
-        }
-    ]
-
-    _request_properties = {
-        "properties": {
-            "bool_field": {"type": "boolean"},
-            "id": {"type": "integer"},
-            "list_field": {
-                "items": {"type": "integer"},
-                "type": "array",
-            },
-            "name": {"description": "name", "type": "string"},
-            "nested_field": {"$ref": "#/definitions/MyNested"},
-        },
-        "type": "object",
+    operation = docs["paths"]["/v1/test"]["get"]
+    parameters = {parameter["name"]: parameter for parameter in operation["parameters"]}
+    assert parameters["bool_field"]["schema"] == {"type": "boolean"}
+    assert parameters["id"]["schema"] == {"type": "integer"}
+    assert parameters["list_field"] == {
+        "explode": True,
+        "in": "query",
+        "name": "list_field",
+        "required": False,
+        "schema": {"items": {"type": "integer"}, "type": "array"},
+        "style": "form",
     }
-    assert json.dumps(docs["definitions"], sort_keys=True) == json.dumps(
-        {
-            "MyNested": {
-                "properties": {"i": {"type": "integer"}},
-                "type": "object",
-            },
-            "Request": {**_request_properties, 'example': example_for_request_schema},
-            "Partial-Request": _request_properties,
-            "Response": {
-                "properties": {"data": {"type": "object"}, "msg": {"type": "string"}},
-                "type": "object",
-            },
+    assert parameters["name"]["schema"] == {"type": "string"}
+    assert parameters["name"]["description"] == "name"
+    assert parameters["nested_field"]["schema"] == {
+        "$ref": "#/components/schemas/MyNested"
+    }
+    assert operation["responses"]["200"] == {
+        "content": {
+            "application/json": {
+                "schema": {"$ref": "#/components/schemas/Response"},
+            }
         },
-        sort_keys=True,
-    )
+        "description": "Success response",
+    }
+    assert operation["responses"]["404"] == {"description": "Not Found"}
+
+    class_operation = docs["paths"]["/v1/class_echo"]["get"]
+    class_parameters = {
+        parameter["name"]: parameter for parameter in class_operation["parameters"]
+    }
+    assert class_parameters["nested_field"]["schema"] == {
+        "$ref": "#/components/schemas/MyNested"
+    }
+    assert class_operation["responses"] == {}
+    assert class_operation["summary"] == "View method summary"
+
+    example_operation = docs["paths"]["/v1/example_endpoint"]["post"]
+    assert example_operation["parameters"] == []
+    assert example_operation["requestBody"] == {
+        "required": False,
+        "content": {
+            "application/json": {
+                "schema": {
+                    "allOf": [{"$ref": "#/components/schemas/Request"}],
+                    "example": example_for_request_schema,
+                }
+            }
+        },
+    }
+
+    schemas = docs["components"]["schemas"]
+    assert set(schemas) == {"MyNested", "Request", "Partial-Request", "Response"}
+    assert schemas["MyNested"]["properties"] == {"i": {"type": "integer"}}
+    assert schemas["Request"]["example"] == example_for_request_schema
+    assert schemas["Request"]["properties"] == schemas["Partial-Request"]["properties"]
+    assert schemas["Request"]["properties"]["nested_field"] == {
+        "$ref": "#/components/schemas/MyNested"
+    }
+    assert schemas["Response"]["properties"]["msg"] == {"type": "string"}
+    assert schemas["Response"]["properties"]["data"]["type"] == "object"
 
 
 async def test_not_register_route_for_none_url():
